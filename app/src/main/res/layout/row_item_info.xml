@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.ds.swipesmartrecyclerview.swipe.SwipeRevealLayout xmlns:android="http://schemas.android.com/apk/res/android"
+   xmlns:app="http://schemas.android.com/apk/res-auto"
+   xmlns:tools="http://schemas.android.com/tools"
+   android:id="@+id/rootSwipe"
+   android:layout_width="match_parent"
+   android:layout_height="80dp"
+   android:paddingBottom="1dp"
+   app:dragEdge="right"
+   app:mode="same_level">
+
+   <LinearLayout
+       android:id="@+id/rowMenu"
+       android:layout_width="wrap_content"
+       android:layout_height="80dp"
+       android:layout_alignParentEnd="true"
+       android:gravity="center_horizontal"
+       android:orientation="horizontal">
+
+
+       <RelativeLayout
+           android:id="@+id/btnRemoveFromList"
+           android:layout_width="105dp"
+           android:layout_height="match_parent"
+           android:background="@color/gray_700"
+           android:orientation="vertical">
+
+           <LinearLayout
+               android:layout_width="wrap_content"
+               android:layout_height="match_parent"
+               android:layout_centerInParent="true"
+               android:clickable="false"
+               android:gravity="center"
+               android:orientation="vertical">
+
+               <androidx.appcompat.widget.AppCompatImageView
+                   android:id="@+id/ivRemoveFromList"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_gravity="center"
+                   app:srcCompat="@drawable/ic_remove_from_favorite" />
+
+               <com.google.android.material.textview.MaterialTextView
+                   android:id="@+id/tvRemoveFromList"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="4dp"
+                   android:layout_marginTop="8dp"
+                   android:layout_marginEnd="4dp"
+                   android:text="@string/text_remove_list"
+                   android:textColor="@color/white" />
+
+           </LinearLayout>
+
+       </RelativeLayout>
+
+
+       <RelativeLayout
+           android:id="@+id/btnMove"
+           android:layout_width="105dp"
+           android:layout_height="match_parent"
+           android:background="@color/yellow_shade_20"
+           android:orientation="vertical">
+
+           <LinearLayout
+               android:layout_width="wrap_content"
+               android:layout_height="match_parent"
+               android:layout_centerInParent="true"
+               android:clickable="false"
+               android:gravity="center"
+               android:orientation="vertical">
+
+               <androidx.appcompat.widget.AppCompatImageView
+                   android:id="@+id/ivMove"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_gravity="center"
+                   app:srcCompat="@drawable/ic_arrow_go"
+                   app:tint="@color/white" />
+
+               <com.google.android.material.textview.MaterialTextView
+                   android:id="@+id/tvMove"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="8dp"
+                   android:layout_marginTop="4dp"
+                   android:layout_marginEnd="4dp"
+                   android:text="@string/text_move"
+                   android:textColor="@color/white" />
+
+           </LinearLayout>
+
+       </RelativeLayout>
+
+
+       <RelativeLayout
+           android:id="@+id/btnSendOrder"
+           android:layout_width="105dp"
+           android:layout_height="match_parent"
+           android:background="@color/green_primary"
+           android:orientation="vertical">
+
+           <LinearLayout
+               android:layout_width="wrap_content"
+               android:layout_height="match_parent"
+               android:layout_centerInParent="true"
+               android:clickable="false"
+               android:gravity="center"
+               android:orientation="vertical">
+
+               <androidx.appcompat.widget.AppCompatImageView
+                   android:id="@+id/ivSendOrder"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_gravity="center"
+                   app:srcCompat="@drawable/ic_fast_order"
+                   app:tint="@color/white" />
+
+               <com.google.android.material.textview.MaterialTextView
+                   android:id="@+id/tvSendOrder"
+                   android:layout_width="wrap_content"
+                   android:layout_height="wrap_content"
+                   android:layout_marginStart="4dp"
+                   android:layout_marginTop="4dp"
+                   android:layout_marginEnd="4dp"
+                   android:text="@string/text_send_order"
+                   android:textColor="@color/white" />
+
+           </LinearLayout>
+
+       </RelativeLayout>
+
+   </LinearLayout>
+
+   <LinearLayout
+       android:id="@+id/rowMain"
+       android:layout_width="match_parent"
+       android:layout_height="80dp"
+       android:background="@android:color/white"
+       android:clickable="true"
+       android:focusable="true"
+       android:orientation="horizontal">
+
+       <androidx.constraintlayout.widget.ConstraintLayout
+           android:layout_width="match_parent"
+           android:layout_height="match_parent"
+           android:background="@color/white"
+           android:foreground="?attr/selectableItemBackground">
+
+           <View
+               android:id="@+id/viewEvaluatingAnimation"
+               android:layout_width="match_parent"
+               android:layout_height="match_parent"
+               android:background="@color/white"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintEnd_toEndOf="parent"
+               app:layout_constraintStart_toStartOf="parent"
+               app:layout_constraintTop_toTopOf="parent" />
+
+           <com.google.android.material.textview.MaterialTextView
+               android:id="@+id/tvStockShortName"
+               android:layout_width="0dp"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="16dp"
+               android:layout_marginEnd="8dp"
+               android:ellipsize="end"
+               android:maxLines="1"
+               android:textSize="14sp"
+               app:layout_constraintBottom_toTopOf="@+id/tvStockFullName"
+               app:layout_constraintEnd_toStartOf="@+id/ivStockChart"
+               app:layout_constraintStart_toStartOf="parent"
+               app:layout_constraintTop_toTopOf="parent"
+               app:layout_constraintVertical_chainStyle="packed"
+               tools:text="Symbol" />
+
+           <com.google.android.material.textview.MaterialTextView
+               android:id="@+id/tvStockFullName"
+               android:layout_width="0dp"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="16dp"
+               android:layout_marginTop="8dp"
+               android:layout_marginEnd="8dp"
+               android:ellipsize="end"
+               android:maxLines="1"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintEnd_toStartOf="@+id/ivStockChart"
+               app:layout_constraintStart_toStartOf="parent"
+               app:layout_constraintTop_toBottomOf="@+id/tvStockShortName"
+               tools:text="Symbol Name" />
+
+           <androidx.appcompat.widget.AppCompatImageView
+               android:id="@+id/ivStockChart"
+               android:layout_width="0dp"
+               android:layout_height="0dp"
+               android:layout_marginTop="16dp"
+               android:layout_marginBottom="16dp"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintDimensionRatio="14:6"
+               app:layout_constraintEnd_toEndOf="parent"
+               app:layout_constraintHorizontal_bias="0.666"
+               app:layout_constraintStart_toStartOf="parent"
+               app:layout_constraintTop_toTopOf="parent"
+               app:layout_constraintVertical_bias="0.0"
+               app:srcCompat="@drawable/ic_dummy_stock_chart" />
+
+           <com.google.android.material.textview.MaterialTextView
+               android:id="@+id/tvStockValue"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:layout_marginEnd="16dp"
+               android:layout_marginBottom="2dp"
+               app:layout_constraintBottom_toTopOf="@+id/tvStockEvaluateRate"
+               app:layout_constraintEnd_toEndOf="parent"
+               app:layout_constraintTop_toTopOf="parent"
+               app:layout_constraintVertical_chainStyle="packed"
+               tools:text="193.72 TL" />
+
+           <com.google.android.material.textview.MaterialTextView
+               android:id="@+id/tvStockEvaluateRate"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               android:layout_marginStart="16dp"
+               android:layout_marginTop="2dp"
+               android:textSize="14sp"
+               app:layout_constraintBottom_toBottomOf="parent"
+               app:layout_constraintEnd_toStartOf="@id/ivStockEvaluateSign"
+               app:layout_constraintTop_toBottomOf="@+id/tvStockValue"
+               tools:text="%3.98" />
+
+           <androidx.appcompat.widget.AppCompatImageView
+               android:id="@+id/ivStockEvaluateSign"
+               android:layout_width="16dp"
+               android:layout_height="16dp"
+               android:layout_marginEnd="16dp"
+               app:layout_constraintBottom_toBottomOf="@id/tvStockEvaluateRate"
+               app:layout_constraintEnd_toEndOf="parent"
+               app:layout_constraintTop_toTopOf="@id/tvStockEvaluateRate"
+               app:srcCompat="@drawable/ic_arrow_upward" />
+
+           <androidx.appcompat.widget.AppCompatImageView
+               android:id="@+id/ivFavStar"
+               android:layout_width="wrap_content"
+               android:layout_height="wrap_content"
+               app:layout_constraintEnd_toStartOf="@+id/tvStockShortName"
+               app:layout_constraintTop_toTopOf="@+id/tvStockShortName"
+               app:srcCompat="@drawable/ic_fav_star" />
+
+       </androidx.constraintlayout.widget.ConstraintLayout>
+
+   </LinearLayout>
+
+</com.ds.swipesmartrecyclerview.swipe.SwipeRevealLayout>
+

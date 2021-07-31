@@ -51,10 +51,14 @@ class SwipeAdapter : BListAdapter<ItemModel, SwipeAdapter.ItemViewHolder>(ItemDi
                 binding.root.context.toast(getItem(bindingAdapterPosition).title)
             }
 
-            binding.rootSwipe.setOnClickListener {
-                if (binding.rootSwipe.isOpened) {
-                    binding.rootSwipe.close(true)
-                }
+            binding.btnMove.setOnClickListener {
+                //binderHelper.closeLayout(getItem(bindingAdapterPosition).title)
+                binding.root.context.toast(getItem(bindingAdapterPosition).title)
+            }
+
+            binding.btnSendOrder.setOnClickListener {
+                //binderHelper.closeLayout(getItem(bindingAdapterPosition).title)
+                binding.root.context.toast(getItem(bindingAdapterPosition).title)
             }
         }
     }

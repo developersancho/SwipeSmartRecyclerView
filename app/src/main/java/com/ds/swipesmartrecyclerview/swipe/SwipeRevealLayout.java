@@ -191,6 +191,15 @@ public class SwipeRevealLayout extends ViewGroup {
         mPrevX = ev.getX();
         mPrevY = ev.getY();
 
+        int action = ev.getAction();
+        switch (action){
+            case MotionEvent.ACTION_UP: {
+                if (isOpened()) {
+                    close(true);
+                }
+            }
+        }
+
         // return true => intercept, cannot trigger onClick event
         return !couldBecomeClick && (settling || idleAfterScrolled);
     }

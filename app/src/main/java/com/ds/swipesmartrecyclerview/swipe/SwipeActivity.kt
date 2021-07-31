@@ -27,11 +27,6 @@ class SwipeActivity : AppCompatActivity() {
         binding.rvSwipe.layoutManager = LinearLayoutManager(this)
         binding.rvSwipe.adapter = adapter
         adapter.submitList(getItems())
-        CoroutineScope(Dispatchers.Main).launch {
-            adapter.binderHelper.openLayout(getItems().first().title)
-            delay(1000)
-            adapter.binderHelper.closeLayout(getItems().first().title)
-        }
     }
 
     private fun getItems(): MutableList<ItemModel> {

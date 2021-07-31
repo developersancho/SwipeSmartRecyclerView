@@ -5,15 +5,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ds.swipesmartrecyclerview.databinding.ActivitySwipeBinding
 import com.ds.swipesmartrecyclerview.model.ItemModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 class SwipeActivity : AppCompatActivity() {
     lateinit var binding: ActivitySwipeBinding
     private val adapter by lazy { SwipeAdapter() }
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

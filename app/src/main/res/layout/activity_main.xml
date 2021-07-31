@@ -22,11 +22,12 @@
         android:id="@+id/btnOtherActivity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Other Activity"
+        android:text="Other"
         android:textAllCaps="false"
-        app:layout_constraintEnd_toStartOf="@+id/btnSwipeActivity"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@+id/btnSmartSwipeActivity"
         app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -34,14 +35,24 @@
         android:id="@+id/btnSwipeActivity"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="10dp"
-        android:text="Swipe Activity"
+        android:text="Swipe"
         android:textAllCaps="false"
-        app:layout_constraintBottom_toTopOf="@+id/rvMain"
+        android:textSize="12sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
+        app:layout_constraintStart_toEndOf="@+id/btnSmartSwipeActivity"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/btnSmartSwipeActivity"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Smart Swipe"
+        android:textAllCaps="false"
+        android:textSize="12sp"
+        app:layout_constraintEnd_toStartOf="@+id/btnSwipeActivity"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/btnOtherActivity"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -10,6 +10,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.SwipeSmartRecyclerView">
         <activity
+            android:name=".smartswipe.SmartSwipeActivity"
+            android:exported="true" />
+        <activity
             android:name=".swipe.SwipeActivity"
             android:exported="true" />
         <activity

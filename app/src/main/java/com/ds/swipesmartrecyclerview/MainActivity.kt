@@ -16,6 +16,7 @@ import com.ds.swipesmartrecyclerview.adapter.MainViewHolder
 import com.ds.swipesmartrecyclerview.databinding.ActivityMainBinding
 import com.ds.swipesmartrecyclerview.model.ItemModel
 import com.ds.swipesmartrecyclerview.other.OtherActivity
+import com.ds.swipesmartrecyclerview.smartswipe.SmartSwipeActivity
 import com.ds.swipesmartrecyclerview.swipe.SwipeActivity
 import smartadapter.SmartRecyclerAdapter
 import smartadapter.diffutil.DiffUtilExtension
@@ -42,6 +43,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSwipeActivity.setOnClickListener {
             val intent = Intent(this@MainActivity, SwipeActivity::class.java)
+            startActivity(intent)
+        }
+
+        binding.btnSmartSwipeActivity.setOnClickListener {
+            val intent = Intent(this@MainActivity, SmartSwipeActivity::class.java)
             startActivity(intent)
         }
     }

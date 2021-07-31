@@ -1,1124 +1,934 @@
-package com.ds.swipesmartrecyclerview.swipe;
+package com.ds.swipesmartrecyclerview.swipe
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-import android.content.res.Resources;
-import android.content.res.TypedArray;
-import android.graphics.Rect;
-import android.util.AttributeSet;
-import android.util.DisplayMetrics;
-import android.view.GestureDetector;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
-
-import androidx.core.view.GestureDetectorCompat;
-import androidx.core.view.ViewCompat;
-import androidx.customview.widget.ViewDragHelper;
-
-import com.ds.swipesmartrecyclerview.R;
+import android.annotation.SuppressLint
+import android.content.Context
+import android.graphics.Rect
+import android.util.AttributeSet
+import android.util.DisplayMetrics
+import android.view.GestureDetector
+import android.view.GestureDetector.SimpleOnGestureListener
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.GestureDetectorCompat
+import androidx.core.view.ViewCompat
+import androidx.customview.widget.ViewDragHelper
+import com.ds.swipesmartrecyclerview.R
 
 @SuppressLint("RtlHardcoded")
-public class SwipeRevealLayout extends ViewGroup {
-    // These states are used only for ViewBindHelper
-    protected static final int STATE_CLOSE = 0;
-    protected static final int STATE_CLOSING = 1;
-    protected static final int STATE_OPEN = 2;
-    protected static final int STATE_OPENING = 3;
-    protected static final int STATE_DRAGGING = 4;
-
-    private static final int DEFAULT_MIN_FLING_VELOCITY = 300; // dp per second
-    private static final int DEFAULT_MIN_DIST_REQUEST_DISALLOW_PARENT = 1; // dp
-
-    public static final int DRAG_EDGE_LEFT = 0x1;
-    public static final int DRAG_EDGE_RIGHT = 0x1 << 1;
-    public static final int DRAG_EDGE_TOP = 0x1 << 2;
-    public static final int DRAG_EDGE_BOTTOM = 0x1 << 3;
-
-    /**
-     * The secondary view will be under the main view.
-     */
-    public static final int MODE_NORMAL = 0;
-
-    /**
-     * The secondary view will stick the edge of the main view.
-     */
-    public static final int MODE_SAME_LEVEL = 1;
-
+class SwipeRevealLayout : ViewGroup {
     /**
      * Main view is the view which is shown when the layout is closed.
      */
-    private View mMainView;
+    private var mMainView: View? = null
 
     /**
      * Secondary view is the view which is shown when the layout is opened.
      */
-    private View mSecondaryView;
+    private var mSecondaryView: View? = null
 
     /**
      * The rectangle position of the main view when the layout is closed.
      */
-    private Rect mRectMainClose = new Rect();
+    private val mRectMainClose = Rect()
 
     /**
      * The rectangle position of the main view when the layout is opened.
      */
-    private Rect mRectMainOpen = new Rect();
+    private val mRectMainOpen = Rect()
 
     /**
      * The rectangle position of the secondary view when the layout is closed.
      */
-    private Rect mRectSecClose = new Rect();
+    private val mRectSecClose = Rect()
 
     /**
      * The rectangle position of the secondary view when the layout is opened.
      */
-    private Rect mRectSecOpen = new Rect();
+    private val mRectSecOpen = Rect()
 
     /**
      * The minimum distance (px) to the closest drag edge that the SwipeRevealLayout
      * will disallow the parent to intercept touch event.
      */
-    private int mMinDistRequestDisallowParent = 0;
+    private var mMinDistRequestDisallowParent = 0
+    private var mIsOpenBeforeInit = false
 
-    private boolean mIsOpenBeforeInit = false;
-    private volatile boolean mAborted = false;
-    private volatile boolean mIsScrolling = false;
-    private volatile boolean mLockDrag = false;
+    @Volatile
+    private var mAborted = false
 
-    private int mMinFlingVelocity = DEFAULT_MIN_FLING_VELOCITY;
-    private int mState = STATE_CLOSE;
-    private int mMode = MODE_NORMAL;
+    @Volatile
+    private var mIsScrolling = false
 
-    private int mLastMainLeft = 0;
-    private int mLastMainTop = 0;
-
-    private int mDragEdge = DRAG_EDGE_LEFT;
-
-    private float mDragDist = 0;
-    private float mPrevX = -1;
-    private float mPrevY = -1;
-
-    private ViewDragHelper mDragHelper;
-    private GestureDetectorCompat mGestureDetector;
-
-    private DragStateChangeListener mDragStateChangeListener; // only used for ViewBindHelper
-    private SwipeListener mSwipeListener;
-
-    private int mOnLayoutCount = 0;
+    /**
+     * @return true if the drag/swipe motion is currently locked.
+     */
+    @Volatile
+    var isDragLocked = false
+        private set
+    /**
+     * Get the minimum fling velocity to cause the layout to open/close.
+     *
+     * @return dp per second
+     */
+    /**
+     * Set the minimum fling velocity to cause the layout to open/close.
+     *
+     * @param velocity dp per second
+     */
+    var minFlingVelocity = DEFAULT_MIN_FLING_VELOCITY
+    private var mState = STATE_CLOSE
+    private var mMode = MODE_NORMAL
+    private var mLastMainLeft = 0
+    private var mLastMainTop = 0
+    /**
+     * Get the edge where the layout can be dragged from.
+     *
+     * @return Can be one of these
+     *
+     *  * [.DRAG_EDGE_LEFT]
+     *  * [.DRAG_EDGE_TOP]
+     *  * [.DRAG_EDGE_RIGHT]
+     *  * [.DRAG_EDGE_BOTTOM]
+     *
+     */
+    /**
+     * Set the edge where the layout can be dragged from.
+     *
+     * @param dragEdge Can be one of these
+     *
+     *  * [.DRAG_EDGE_LEFT]
+     *  * [.DRAG_EDGE_TOP]
+     *  * [.DRAG_EDGE_RIGHT]
+     *  * [.DRAG_EDGE_BOTTOM]
+     *
+     */
+    var dragEdge = DRAG_EDGE_LEFT
+    private var mDragDist = 0f
+    private var mPrevX = -1f
+    private var mPrevY = -1f
+    private var mDragHelper: ViewDragHelper? = null
+    private var mGestureDetector: GestureDetectorCompat? = null
+    private var mDragStateChangeListener // only used for ViewBindHelper
+            : DragStateChangeListener? = null
+    private var mSwipeListener: SwipeListener? = null
+    private var mOnLayoutCount = 0
 
     interface DragStateChangeListener {
-        void onDragStateChanged(int state);
+        fun onDragStateChanged(state: Int)
     }
 
     /**
      * Listener for monitoring events about swipe layout.
      */
-    public interface SwipeListener {
+    interface SwipeListener {
         /**
          * Called when the main view becomes completely closed.
          */
-        void onClosed(SwipeRevealLayout view);
+        fun onClosed(view: SwipeRevealLayout?)
 
         /**
          * Called when the main view becomes completely opened.
          */
-        void onOpened(SwipeRevealLayout view);
+        fun onOpened(view: SwipeRevealLayout?)
 
         /**
          * Called when the main view's position changes.
          *
          * @param slideOffset The new offset of the main view within its range, from 0-1
          */
-        void onSlide(SwipeRevealLayout view, float slideOffset);
+        fun onSlide(view: SwipeRevealLayout?, slideOffset: Float)
     }
 
     /**
-     * No-op stub for {@link SwipeListener}. If you only want ot implement a subset
+     * No-op stub for [SwipeListener]. If you only want ot implement a subset
      * of the listener methods, you can extend this instead of implement the full interface.
      */
-    public static class SimpleSwipeListener implements SwipeListener {
-        @Override
-        public void onClosed(SwipeRevealLayout view) {
+    class SimpleSwipeListener : SwipeListener {
+        override fun onClosed(view: SwipeRevealLayout?) {}
+        override fun onOpened(view: SwipeRevealLayout?) {}
+        override fun onSlide(view: SwipeRevealLayout?, slideOffset: Float) {}
+    }
+
+    constructor(context: Context?) : super(context) {
+        init(context, null)
+    }
+
+    constructor(context: Context?, attrs: AttributeSet?) : super(context, attrs) {
+        init(context, attrs)
+    }
+
+    constructor(context: Context?, attrs: AttributeSet?, defStyleAttr: Int) : super(
+        context,
+        attrs,
+        defStyleAttr
+    ) {
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        mGestureDetector!!.onTouchEvent(event)
+        mDragHelper!!.processTouchEvent(event)
+        return true
+    }
+
+    override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        if (isDragLocked) {
+            return super.onInterceptTouchEvent(ev)
         }
-
-        @Override
-        public void onOpened(SwipeRevealLayout view) {
-        }
-
-        @Override
-        public void onSlide(SwipeRevealLayout view, float slideOffset) {
-        }
-    }
-
-    public SwipeRevealLayout(Context context) {
-        super(context);
-        init(context, null);
-    }
-
-    public SwipeRevealLayout(Context context, AttributeSet attrs) {
-        super(context, attrs);
-        init(context, attrs);
-    }
-
-    public SwipeRevealLayout(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        mGestureDetector.onTouchEvent(event);
-        mDragHelper.processTouchEvent(event);
-        return true;
-    }
-
-    @Override
-    public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (isDragLocked()) {
-            return super.onInterceptTouchEvent(ev);
-        }
-
-        mDragHelper.processTouchEvent(ev);
-        mGestureDetector.onTouchEvent(ev);
-        accumulateDragDist(ev);
-
-        boolean couldBecomeClick = couldBecomeClick(ev);
-        boolean settling = mDragHelper.getViewDragState() == ViewDragHelper.STATE_SETTLING;
-        boolean idleAfterScrolled = mDragHelper.getViewDragState() == ViewDragHelper.STATE_IDLE
-                && mIsScrolling;
+        mDragHelper!!.processTouchEvent(ev)
+        mGestureDetector!!.onTouchEvent(ev)
+        accumulateDragDist(ev)
+        val couldBecomeClick = couldBecomeClick(ev)
+        val settling = mDragHelper!!.viewDragState == ViewDragHelper.STATE_SETTLING
+        val idleAfterScrolled = (mDragHelper!!.viewDragState == ViewDragHelper.STATE_IDLE
+                && mIsScrolling)
 
         // must be placed as the last statement
-        mPrevX = ev.getX();
-        mPrevY = ev.getY();
-
-        int action = ev.getAction();
-        switch (action){
-            case MotionEvent.ACTION_UP: {
-                if (isOpened()) {
-                    close(true);
+        mPrevX = ev.x
+        mPrevY = ev.y
+        val action = ev.action
+        when (action) {
+            MotionEvent.ACTION_UP -> {
+                if (isOpened) {
+                    close(true)
                 }
             }
         }
 
         // return true => intercept, cannot trigger onClick event
-        return !couldBecomeClick && (settling || idleAfterScrolled);
+        return !couldBecomeClick && (settling || idleAfterScrolled)
     }
 
-    @Override
-    protected void onFinishInflate() {
-        super.onFinishInflate();
+    override fun onFinishInflate() {
+        super.onFinishInflate()
 
         // get views
-        if (getChildCount() >= 2) {
-            mSecondaryView = getChildAt(0);
-            mMainView = getChildAt(1);
-        } else if (getChildCount() == 1) {
-            mMainView = getChildAt(0);
+        if (childCount >= 2) {
+            mSecondaryView = getChildAt(0)
+            mMainView = getChildAt(1)
+        } else if (childCount == 1) {
+            mMainView = getChildAt(0)
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    @SuppressWarnings("ConstantConditions")
-    @Override
-    protected void onLayout(boolean changed, int l, int t, int r, int b) {
-        mAborted = false;
-
-        for (int index = 0; index < getChildCount(); index++) {
-            final View child = getChildAt(index);
-
-            int left, right, top, bottom;
-            left = right = top = bottom = 0;
-
-            final int minLeft = getPaddingLeft();
-            final int maxRight = Math.max(r - getPaddingRight() - l, 0);
-            final int minTop = getPaddingTop();
-            final int maxBottom = Math.max(b - getPaddingBottom() - t, 0);
-
-            int measuredChildHeight = child.getMeasuredHeight();
-            int measuredChildWidth = child.getMeasuredWidth();
+    override fun onLayout(changed: Boolean, l: Int, t: Int, r: Int, b: Int) {
+        mAborted = false
+        for (index in 0 until childCount) {
+            val child = getChildAt(index)
+            var left: Int
+            var right: Int
+            var top: Int
+            var bottom: Int
+            bottom = 0
+            top = bottom
+            right = top
+            left = right
+            val minLeft = paddingLeft
+            val maxRight = Math.max(r - paddingRight - l, 0)
+            val minTop = paddingTop
+            val maxBottom = Math.max(b - paddingBottom - t, 0)
+            var measuredChildHeight = child.measuredHeight
+            var measuredChildWidth = child.measuredWidth
 
             // need to take account if child size is match_parent
-            final LayoutParams childParams = child.getLayoutParams();
-            boolean matchParentHeight = false;
-            boolean matchParentWidth = false;
-
+            val childParams = child.layoutParams
+            var matchParentHeight = false
+            var matchParentWidth = false
             if (childParams != null) {
-                matchParentHeight = (childParams.height == LayoutParams.MATCH_PARENT) ||
-                        (childParams.height == LayoutParams.FILL_PARENT);
-                matchParentWidth = (childParams.width == LayoutParams.MATCH_PARENT) ||
-                        (childParams.width == LayoutParams.FILL_PARENT);
+                matchParentHeight = childParams.height == LayoutParams.MATCH_PARENT ||
+                        childParams.height == LayoutParams.FILL_PARENT
+                matchParentWidth = childParams.width == LayoutParams.MATCH_PARENT ||
+                        childParams.width == LayoutParams.FILL_PARENT
             }
-
             if (matchParentHeight) {
-                measuredChildHeight = maxBottom - minTop;
-                childParams.height = measuredChildHeight;
+                measuredChildHeight = maxBottom - minTop
+                childParams!!.height = measuredChildHeight
             }
-
             if (matchParentWidth) {
-                measuredChildWidth = maxRight - minLeft;
-                childParams.width = measuredChildWidth;
+                measuredChildWidth = maxRight - minLeft
+                childParams!!.width = measuredChildWidth
             }
-
-            switch (mDragEdge) {
-                case DRAG_EDGE_RIGHT:
-                    left = Math.max(r - measuredChildWidth - getPaddingRight() - l, minLeft);
-                    top = Math.min(getPaddingTop(), maxBottom);
-                    right = Math.max(r - getPaddingRight() - l, minLeft);
-                    bottom = Math.min(measuredChildHeight + getPaddingTop(), maxBottom);
-                    break;
-
-                case DRAG_EDGE_LEFT:
-                    left = Math.min(getPaddingLeft(), maxRight);
-                    top = Math.min(getPaddingTop(), maxBottom);
-                    right = Math.min(measuredChildWidth + getPaddingLeft(), maxRight);
-                    bottom = Math.min(measuredChildHeight + getPaddingTop(), maxBottom);
-                    break;
-
-                case DRAG_EDGE_TOP:
-                    left = Math.min(getPaddingLeft(), maxRight);
-                    top = Math.min(getPaddingTop(), maxBottom);
-                    right = Math.min(measuredChildWidth + getPaddingLeft(), maxRight);
-                    bottom = Math.min(measuredChildHeight + getPaddingTop(), maxBottom);
-                    break;
-
-                case DRAG_EDGE_BOTTOM:
-                    left = Math.min(getPaddingLeft(), maxRight);
-                    top = Math.max(b - measuredChildHeight - getPaddingBottom() - t, minTop);
-                    right = Math.min(measuredChildWidth + getPaddingLeft(), maxRight);
-                    bottom = Math.max(b - getPaddingBottom() - t, minTop);
-                    break;
+            when (dragEdge) {
+                DRAG_EDGE_RIGHT -> {
+                    left = Math.max(r - measuredChildWidth - paddingRight - l, minLeft)
+                    top = Math.min(paddingTop, maxBottom)
+                    right = Math.max(r - paddingRight - l, minLeft)
+                    bottom = Math.min(measuredChildHeight + paddingTop, maxBottom)
+                }
+                DRAG_EDGE_LEFT -> {
+                    left = Math.min(paddingLeft, maxRight)
+                    top = Math.min(paddingTop, maxBottom)
+                    right = Math.min(measuredChildWidth + paddingLeft, maxRight)
+                    bottom = Math.min(measuredChildHeight + paddingTop, maxBottom)
+                }
+                DRAG_EDGE_TOP -> {
+                    left = Math.min(paddingLeft, maxRight)
+                    top = Math.min(paddingTop, maxBottom)
+                    right = Math.min(measuredChildWidth + paddingLeft, maxRight)
+                    bottom = Math.min(measuredChildHeight + paddingTop, maxBottom)
+                }
+                DRAG_EDGE_BOTTOM -> {
+                    left = Math.min(paddingLeft, maxRight)
+                    top = Math.max(b - measuredChildHeight - paddingBottom - t, minTop)
+                    right = Math.min(measuredChildWidth + paddingLeft, maxRight)
+                    bottom = Math.max(b - paddingBottom - t, minTop)
+                }
             }
-
-            child.layout(left, top, right, bottom);
+            child.layout(left, top, right, bottom)
         }
 
         // taking account offset when mode is SAME_LEVEL
         if (mMode == MODE_SAME_LEVEL) {
-            switch (mDragEdge) {
-                case DRAG_EDGE_LEFT:
-                    mSecondaryView.offsetLeftAndRight(-mSecondaryView.getWidth());
-                    break;
-
-                case DRAG_EDGE_RIGHT:
-                    mSecondaryView.offsetLeftAndRight(mSecondaryView.getWidth());
-                    break;
-
-                case DRAG_EDGE_TOP:
-                    mSecondaryView.offsetTopAndBottom(-mSecondaryView.getHeight());
-                    break;
-
-                case DRAG_EDGE_BOTTOM:
-                    mSecondaryView.offsetTopAndBottom(mSecondaryView.getHeight());
+            when (dragEdge) {
+                DRAG_EDGE_LEFT -> mSecondaryView!!.offsetLeftAndRight(-mSecondaryView!!.width)
+                DRAG_EDGE_RIGHT -> mSecondaryView!!.offsetLeftAndRight(
+                    mSecondaryView!!.width
+                )
+                DRAG_EDGE_TOP -> mSecondaryView!!.offsetTopAndBottom(-mSecondaryView!!.height)
+                DRAG_EDGE_BOTTOM -> mSecondaryView!!.offsetTopAndBottom(
+                    mSecondaryView!!.height
+                )
             }
         }
-
-        initRects();
-
+        initRects()
         if (mIsOpenBeforeInit) {
-            open(false);
+            open(false)
         } else {
-            close(false);
+            close(false)
         }
-
-        mLastMainLeft = mMainView.getLeft();
-        mLastMainTop = mMainView.getTop();
-
-        mOnLayoutCount++;
+        mLastMainLeft = mMainView!!.left
+        mLastMainTop = mMainView!!.top
+        mOnLayoutCount++
     }
 
     /**
      * {@inheritDoc}
      */
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        if (getChildCount() < 2) {
-            throw new RuntimeException("Layout must have two children");
+    override fun onMeasure(vms: Int, hms: Int) {
+        var widthMeasureSpec = vms
+        var heightMeasureSpec = hms
+        if (childCount < 2) {
+            throw RuntimeException("Layout must have two children")
         }
-
-        final LayoutParams params = getLayoutParams();
-
-        final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
-
-        int desiredWidth = 0;
-        int desiredHeight = 0;
+        val params = layoutParams
+        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+        var desiredWidth = 0
+        var desiredHeight = 0
 
         // first find the largest child
-        for (int i = 0; i < getChildCount(); i++) {
-            final View child = getChildAt(i);
-            measureChild(child, widthMeasureSpec, heightMeasureSpec);
-            desiredWidth = Math.max(child.getMeasuredWidth(), desiredWidth);
-            desiredHeight = Math.max(child.getMeasuredHeight(), desiredHeight);
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            measureChild(child, widthMeasureSpec, heightMeasureSpec)
+            desiredWidth = Math.max(child.measuredWidth, desiredWidth)
+            desiredHeight = Math.max(child.measuredHeight, desiredHeight)
         }
         // create new measure spec using the largest child width
-        widthMeasureSpec = MeasureSpec.makeMeasureSpec(desiredWidth, widthMode);
-        heightMeasureSpec = MeasureSpec.makeMeasureSpec(desiredHeight, heightMode);
-
-        final int measuredWidth = MeasureSpec.getSize(widthMeasureSpec);
-        final int measuredHeight = MeasureSpec.getSize(heightMeasureSpec);
-
-        for (int i = 0; i < getChildCount(); i++) {
-            final View child = getChildAt(i);
-            final LayoutParams childParams = child.getLayoutParams();
-
+        widthMeasureSpec = MeasureSpec.makeMeasureSpec(desiredWidth, widthMode)
+        heightMeasureSpec = MeasureSpec.makeMeasureSpec(desiredHeight, heightMode)
+        val measuredWidth = MeasureSpec.getSize(widthMeasureSpec)
+        val measuredHeight = MeasureSpec.getSize(heightMeasureSpec)
+        for (i in 0 until childCount) {
+            val child = getChildAt(i)
+            val childParams = child.layoutParams
             if (childParams != null) {
                 if (childParams.height == LayoutParams.MATCH_PARENT) {
-                    child.setMinimumHeight(measuredHeight);
+                    child.minimumHeight = measuredHeight
                 }
-
                 if (childParams.width == LayoutParams.MATCH_PARENT) {
-                    child.setMinimumWidth(measuredWidth);
+                    child.minimumWidth = measuredWidth
                 }
             }
-
-            measureChild(child, widthMeasureSpec, heightMeasureSpec);
-            desiredWidth = Math.max(child.getMeasuredWidth(), desiredWidth);
-            desiredHeight = Math.max(child.getMeasuredHeight(), desiredHeight);
+            measureChild(child, widthMeasureSpec, heightMeasureSpec)
+            desiredWidth = Math.max(child.measuredWidth, desiredWidth)
+            desiredHeight = Math.max(child.measuredHeight, desiredHeight)
         }
 
         // taking accounts of padding
-        desiredWidth += getPaddingLeft() + getPaddingRight();
-        desiredHeight += getPaddingTop() + getPaddingBottom();
+        desiredWidth += paddingLeft + paddingRight
+        desiredHeight += paddingTop + paddingBottom
 
         // adjust desired width
         if (widthMode == MeasureSpec.EXACTLY) {
-            desiredWidth = measuredWidth;
+            desiredWidth = measuredWidth
         } else {
             if (params.width == LayoutParams.MATCH_PARENT) {
-                desiredWidth = measuredWidth;
+                desiredWidth = measuredWidth
             }
-
             if (widthMode == MeasureSpec.AT_MOST) {
-                desiredWidth = (desiredWidth > measuredWidth) ? measuredWidth : desiredWidth;
+                desiredWidth = if (desiredWidth > measuredWidth) measuredWidth else desiredWidth
             }
         }
 
         // adjust desired height
         if (heightMode == MeasureSpec.EXACTLY) {
-            desiredHeight = measuredHeight;
+            desiredHeight = measuredHeight
         } else {
             if (params.height == LayoutParams.MATCH_PARENT) {
-                desiredHeight = measuredHeight;
+                desiredHeight = measuredHeight
             }
-
             if (heightMode == MeasureSpec.AT_MOST) {
-                desiredHeight = (desiredHeight > measuredHeight) ? measuredHeight : desiredHeight;
+                desiredHeight =
+                    if (desiredHeight > measuredHeight) measuredHeight else desiredHeight
             }
         }
-
-        setMeasuredDimension(desiredWidth, desiredHeight);
+        setMeasuredDimension(desiredWidth, desiredHeight)
     }
 
-    @Override
-    public void computeScroll() {
-        if (mDragHelper.continueSettling(true)) {
-            ViewCompat.postInvalidateOnAnimation(this);
+    override fun computeScroll() {
+        if (mDragHelper!!.continueSettling(true)) {
+            ViewCompat.postInvalidateOnAnimation(this)
         }
     }
 
     /**
      * Open the panel to show the secondary view
      *
-     * @param animation true to animate the open motion. {@link SwipeListener} won't be
-     *                  called if is animation is false.
+     * @param animation true to animate the open motion. [SwipeListener] won't be
+     * called if is animation is false.
      */
-    public void open(boolean animation) {
-        mIsOpenBeforeInit = true;
-        mAborted = false;
-
+    fun open(animation: Boolean) {
+        mIsOpenBeforeInit = true
+        mAborted = false
         if (animation) {
-            mState = STATE_OPENING;
-            mDragHelper.smoothSlideViewTo(mMainView, mRectMainOpen.left, mRectMainOpen.top);
-
+            mState = STATE_OPENING
+            mDragHelper!!.smoothSlideViewTo(mMainView!!, mRectMainOpen.left, mRectMainOpen.top)
             if (mDragStateChangeListener != null) {
-                mDragStateChangeListener.onDragStateChanged(mState);
+                mDragStateChangeListener!!.onDragStateChanged(mState)
             }
         } else {
-            mState = STATE_OPEN;
-            mDragHelper.abort();
-
-            mMainView.layout(
-                    mRectMainOpen.left,
-                    mRectMainOpen.top,
-                    mRectMainOpen.right,
-                    mRectMainOpen.bottom
-            );
-
-            mSecondaryView.layout(
-                    mRectSecOpen.left,
-                    mRectSecOpen.top,
-                    mRectSecOpen.right,
-                    mRectSecOpen.bottom
-            );
+            mState = STATE_OPEN
+            mDragHelper!!.abort()
+            mMainView!!.layout(
+                mRectMainOpen.left,
+                mRectMainOpen.top,
+                mRectMainOpen.right,
+                mRectMainOpen.bottom
+            )
+            mSecondaryView!!.layout(
+                mRectSecOpen.left,
+                mRectSecOpen.top,
+                mRectSecOpen.right,
+                mRectSecOpen.bottom
+            )
         }
-
-        ViewCompat.postInvalidateOnAnimation(SwipeRevealLayout.this);
+        ViewCompat.postInvalidateOnAnimation(this@SwipeRevealLayout)
     }
 
     /**
      * Close the panel to hide the secondary view
      *
-     * @param animation true to animate the close motion. {@link SwipeListener} won't be
-     *                  called if is animation is false.
+     * @param animation true to animate the close motion. [SwipeListener] won't be
+     * called if is animation is false.
      */
-    public void close(boolean animation) {
-        mIsOpenBeforeInit = false;
-        mAborted = false;
-
+    fun close(animation: Boolean) {
+        mIsOpenBeforeInit = false
+        mAborted = false
         if (animation) {
-            mState = STATE_CLOSING;
-            mDragHelper.smoothSlideViewTo(mMainView, mRectMainClose.left, mRectMainClose.top);
-
+            mState = STATE_CLOSING
+            mDragHelper!!.smoothSlideViewTo(mMainView!!, mRectMainClose.left, mRectMainClose.top)
             if (mDragStateChangeListener != null) {
-                mDragStateChangeListener.onDragStateChanged(mState);
+                mDragStateChangeListener!!.onDragStateChanged(mState)
             }
-
         } else {
-            mState = STATE_CLOSE;
-            mDragHelper.abort();
-
-            mMainView.layout(
-                    mRectMainClose.left,
-                    mRectMainClose.top,
-                    mRectMainClose.right,
-                    mRectMainClose.bottom
-            );
-
-            mSecondaryView.layout(
-                    mRectSecClose.left,
-                    mRectSecClose.top,
-                    mRectSecClose.right,
-                    mRectSecClose.bottom
-            );
+            mState = STATE_CLOSE
+            mDragHelper!!.abort()
+            mMainView!!.layout(
+                mRectMainClose.left,
+                mRectMainClose.top,
+                mRectMainClose.right,
+                mRectMainClose.bottom
+            )
+            mSecondaryView!!.layout(
+                mRectSecClose.left,
+                mRectSecClose.top,
+                mRectSecClose.right,
+                mRectSecClose.bottom
+            )
         }
-
-        ViewCompat.postInvalidateOnAnimation(SwipeRevealLayout.this);
+        ViewCompat.postInvalidateOnAnimation(this@SwipeRevealLayout)
     }
 
-    /**
-     * Set the minimum fling velocity to cause the layout to open/close.
-     *
-     * @param velocity dp per second
-     */
-    public void setMinFlingVelocity(int velocity) {
-        mMinFlingVelocity = velocity;
-    }
-
-    /**
-     * Get the minimum fling velocity to cause the layout to open/close.
-     *
-     * @return dp per second
-     */
-    public int getMinFlingVelocity() {
-        return mMinFlingVelocity;
-    }
-
-    /**
-     * Set the edge where the layout can be dragged from.
-     *
-     * @param dragEdge Can be one of these
-     *                 <ul>
-     *                      <li>{@link #DRAG_EDGE_LEFT}</li>
-     *                      <li>{@link #DRAG_EDGE_TOP}</li>
-     *                      <li>{@link #DRAG_EDGE_RIGHT}</li>
-     *                      <li>{@link #DRAG_EDGE_BOTTOM}</li>
-     *                 </ul>
-     */
-    public void setDragEdge(int dragEdge) {
-        mDragEdge = dragEdge;
-    }
-
-    /**
-     * Get the edge where the layout can be dragged from.
-     *
-     * @return Can be one of these
-     * <ul>
-     *      <li>{@link #DRAG_EDGE_LEFT}</li>
-     *      <li>{@link #DRAG_EDGE_TOP}</li>
-     *      <li>{@link #DRAG_EDGE_RIGHT}</li>
-     *      <li>{@link #DRAG_EDGE_BOTTOM}</li>
-     * </ul>
-     */
-    public int getDragEdge() {
-        return mDragEdge;
-    }
-
-    public void setSwipeListener(SwipeListener listener) {
-        mSwipeListener = listener;
+    fun setSwipeListener(listener: SwipeListener?) {
+        mSwipeListener = listener
     }
 
     /**
      * @param lock if set to true, the user cannot drag/swipe the layout.
      */
-    public void setLockDrag(boolean lock) {
-        mLockDrag = lock;
-    }
-
-    /**
-     * @return true if the drag/swipe motion is currently locked.
-     */
-    public boolean isDragLocked() {
-        return mLockDrag;
+    fun setLockDrag(lock: Boolean) {
+        isDragLocked = lock
     }
 
     /**
      * @return true if layout is fully opened, false otherwise.
      */
-    public boolean isOpened() {
-        return (mState == STATE_OPEN);
-    }
+    val isOpened: Boolean
+        get() = mState == STATE_OPEN
 
     /**
      * @return true if layout is fully closed, false otherwise.
      */
-    public boolean isClosed() {
-        return (mState == STATE_CLOSE);
+    val isClosed: Boolean
+        get() = mState == STATE_CLOSE
+
+    /**
+     * Only used for [ViewBinderHelper]
+     */
+    fun setDragStateChangeListener(listener: DragStateChangeListener?) {
+        mDragStateChangeListener = listener
     }
 
     /**
-     * Only used for {@link ViewBinderHelper}
+     * Abort current motion in progress. Only used for [ViewBinderHelper]
      */
-    void setDragStateChangeListener(DragStateChangeListener listener) {
-        mDragStateChangeListener = listener;
-    }
-
-    /**
-     * Abort current motion in progress. Only used for {@link ViewBinderHelper}
-     */
-    protected void abort() {
-        mAborted = true;
-        mDragHelper.abort();
+    fun abort() {
+        mAborted = true
+        mDragHelper!!.abort()
     }
 
     /**
      * In RecyclerView/ListView, onLayout should be called 2 times to display children views correctly.
      * This method check if it've already called onLayout two times.
      *
-     * @return true if you should call {@link #requestLayout()}.
+     * @return true if you should call [.requestLayout].
      */
-    protected boolean shouldRequestLayout() {
-        return mOnLayoutCount < 2;
+    fun shouldRequestLayout(): Boolean {
+        return mOnLayoutCount < 2
     }
 
-
-    private int getMainOpenLeft() {
-        switch (mDragEdge) {
-            case DRAG_EDGE_LEFT:
-                return mRectMainClose.left + mSecondaryView.getWidth();
-
-            case DRAG_EDGE_RIGHT:
-                return mRectMainClose.left - mSecondaryView.getWidth();
-
-            case DRAG_EDGE_TOP:
-                return mRectMainClose.left;
-
-            case DRAG_EDGE_BOTTOM:
-                return mRectMainClose.left;
-
-            default:
-                return 0;
+    private val mainOpenLeft: Int
+        get() = when (dragEdge) {
+            DRAG_EDGE_LEFT -> mRectMainClose.left + mSecondaryView!!.width
+            DRAG_EDGE_RIGHT -> mRectMainClose.left - mSecondaryView!!.width
+            DRAG_EDGE_TOP -> mRectMainClose.left
+            DRAG_EDGE_BOTTOM -> mRectMainClose.left
+            else -> 0
         }
-    }
-
-    private int getMainOpenTop() {
-        switch (mDragEdge) {
-            case DRAG_EDGE_LEFT:
-                return mRectMainClose.top;
-
-            case DRAG_EDGE_RIGHT:
-                return mRectMainClose.top;
-
-            case DRAG_EDGE_TOP:
-                return mRectMainClose.top + mSecondaryView.getHeight();
-
-            case DRAG_EDGE_BOTTOM:
-                return mRectMainClose.top - mSecondaryView.getHeight();
-
-            default:
-                return 0;
-        }
-    }
-
-    private int getSecOpenLeft() {
-        if (mMode == MODE_NORMAL || mDragEdge == DRAG_EDGE_BOTTOM || mDragEdge == DRAG_EDGE_TOP) {
-            return mRectSecClose.left;
+    private val mainOpenTop: Int
+        get() = when (dragEdge) {
+            DRAG_EDGE_LEFT -> mRectMainClose.top
+            DRAG_EDGE_RIGHT -> mRectMainClose.top
+            DRAG_EDGE_TOP -> mRectMainClose.top + mSecondaryView!!.height
+            DRAG_EDGE_BOTTOM -> mRectMainClose.top - mSecondaryView!!.height
+            else -> 0
         }
 
-        if (mDragEdge == DRAG_EDGE_LEFT) {
-            return mRectSecClose.left + mSecondaryView.getWidth();
-        } else {
-            return mRectSecClose.left - mSecondaryView.getWidth();
+    private val secOpenLeft: Int
+        get() {
+            if (mMode == MODE_NORMAL || dragEdge == DRAG_EDGE_BOTTOM || dragEdge == DRAG_EDGE_TOP) {
+                return mRectSecClose.left
+            }
+            return if (dragEdge == DRAG_EDGE_LEFT) {
+                mRectSecClose.left + mSecondaryView!!.width
+            } else {
+                mRectSecClose.left - mSecondaryView!!.width
+            }
         }
-    }
 
-    private int getSecOpenTop() {
-        if (mMode == MODE_NORMAL || mDragEdge == DRAG_EDGE_LEFT || mDragEdge == DRAG_EDGE_RIGHT) {
-            return mRectSecClose.top;
+    private val secOpenTop: Int
+        get() {
+            if (mMode == MODE_NORMAL || dragEdge == DRAG_EDGE_LEFT || dragEdge == DRAG_EDGE_RIGHT) {
+                return mRectSecClose.top
+            }
+            return if (dragEdge == DRAG_EDGE_TOP) {
+                mRectSecClose.top + mSecondaryView!!.height
+            } else {
+                mRectSecClose.top - mSecondaryView!!.height
+            }
         }
 
-        if (mDragEdge == DRAG_EDGE_TOP) {
-            return mRectSecClose.top + mSecondaryView.getHeight();
-        } else {
-            return mRectSecClose.top - mSecondaryView.getHeight();
-        }
-    }
-
-    private void initRects() {
+    private fun initRects() {
         // close position of main view
-        mRectMainClose.set(
-                mMainView.getLeft(),
-                mMainView.getTop(),
-                mMainView.getRight(),
-                mMainView.getBottom()
-        );
+        mRectMainClose[mMainView!!.left, mMainView!!.top, mMainView!!.right] = mMainView!!.bottom
 
         // close position of secondary view
-        mRectSecClose.set(
-                mSecondaryView.getLeft(),
-                mSecondaryView.getTop(),
-                mSecondaryView.getRight(),
-                mSecondaryView.getBottom()
-        );
+        mRectSecClose[mSecondaryView!!.left, mSecondaryView!!.top, mSecondaryView!!.right] =
+            mSecondaryView!!.bottom
 
         // open position of the main view
-        mRectMainOpen.set(
-                getMainOpenLeft(),
-                getMainOpenTop(),
-                getMainOpenLeft() + mMainView.getWidth(),
-                getMainOpenTop() + mMainView.getHeight()
-        );
+        mRectMainOpen[mainOpenLeft, mainOpenTop, mainOpenLeft + mMainView!!.width] =
+            mainOpenTop + mMainView!!.height
 
         // open position of the secondary view
-        mRectSecOpen.set(
-                getSecOpenLeft(),
-                getSecOpenTop(),
-                getSecOpenLeft() + mSecondaryView.getWidth(),
-                getSecOpenTop() + mSecondaryView.getHeight()
-        );
+        mRectSecOpen[secOpenLeft, secOpenTop, secOpenLeft + mSecondaryView!!.width] =
+            secOpenTop + mSecondaryView!!.height
     }
 
-    private boolean couldBecomeClick(MotionEvent ev) {
-        return isInMainView(ev) && !shouldInitiateADrag();
+    private fun couldBecomeClick(ev: MotionEvent): Boolean {
+        return isInMainView(ev) && !shouldInitiateADrag()
     }
 
-    private boolean isInMainView(MotionEvent ev) {
-        float x = ev.getX();
-        float y = ev.getY();
-
-        boolean withinVertical = mMainView.getTop() <= y && y <= mMainView.getBottom();
-        boolean withinHorizontal = mMainView.getLeft() <= x && x <= mMainView.getRight();
-
-        return withinVertical && withinHorizontal;
+    private fun isInMainView(ev: MotionEvent): Boolean {
+        val x = ev.x
+        val y = ev.y
+        val withinVertical = mMainView!!.top <= y && y <= mMainView!!.bottom
+        val withinHorizontal = mMainView!!.left <= x && x <= mMainView!!.right
+        return withinVertical && withinHorizontal
     }
 
-    private boolean shouldInitiateADrag() {
-        float minDistToInitiateDrag = mDragHelper.getTouchSlop();
-        return mDragDist >= minDistToInitiateDrag;
+    private fun shouldInitiateADrag(): Boolean {
+        val minDistToInitiateDrag = mDragHelper!!.touchSlop.toFloat()
+        return mDragDist >= minDistToInitiateDrag
     }
 
-    private void accumulateDragDist(MotionEvent ev) {
-        final int action = ev.getAction();
+    private fun accumulateDragDist(ev: MotionEvent) {
+        val action = ev.action
         if (action == MotionEvent.ACTION_DOWN) {
-            mDragDist = 0;
-            return;
+            mDragDist = 0f
+            return
         }
-
-        boolean dragHorizontally = getDragEdge() == DRAG_EDGE_LEFT ||
-                getDragEdge() == DRAG_EDGE_RIGHT;
-
-        float dragged;
-        if (dragHorizontally) {
-            dragged = Math.abs(ev.getX() - mPrevX);
+        val dragHorizontally = dragEdge == DRAG_EDGE_LEFT ||
+                dragEdge == DRAG_EDGE_RIGHT
+        val dragged: Float
+        dragged = if (dragHorizontally) {
+            Math.abs(ev.x - mPrevX)
         } else {
-            dragged = Math.abs(ev.getY() - mPrevY);
+            Math.abs(ev.y - mPrevY)
         }
-
-        mDragDist += dragged;
+        mDragDist += dragged
     }
 
-    private void init(Context context, AttributeSet attrs) {
+    private fun init(context: Context?, attrs: AttributeSet?) {
         if (attrs != null && context != null) {
-            TypedArray a = context.getTheme().obtainStyledAttributes(
-                    attrs,
-                    R.styleable.SwipeRevealLayout,
-                    0, 0
-            );
-
-            mDragEdge = a.getInteger(R.styleable.SwipeRevealLayout_dragEdge, DRAG_EDGE_LEFT);
-            mMinFlingVelocity = a.getInteger(R.styleable.SwipeRevealLayout_flingVelocity, DEFAULT_MIN_FLING_VELOCITY);
-            mMode = a.getInteger(R.styleable.SwipeRevealLayout_mode, MODE_NORMAL);
-
+            val a = context.theme.obtainStyledAttributes(
+                attrs,
+                R.styleable.SwipeRevealLayout,
+                0, 0
+            )
+            dragEdge = a.getInteger(R.styleable.SwipeRevealLayout_dragEdge, DRAG_EDGE_LEFT)
+            minFlingVelocity = a.getInteger(
+                R.styleable.SwipeRevealLayout_flingVelocity,
+                DEFAULT_MIN_FLING_VELOCITY
+            )
+            mMode = a.getInteger(R.styleable.SwipeRevealLayout_mode, MODE_NORMAL)
             mMinDistRequestDisallowParent = a.getDimensionPixelSize(
-                    R.styleable.SwipeRevealLayout_minDistRequestDisallowParent,
-                    dpToPx(DEFAULT_MIN_DIST_REQUEST_DISALLOW_PARENT)
-            );
+                R.styleable.SwipeRevealLayout_minDistRequestDisallowParent,
+                dpToPx(DEFAULT_MIN_DIST_REQUEST_DISALLOW_PARENT)
+            )
         }
-
-        mDragHelper = ViewDragHelper.create(this, 1.0f, mDragHelperCallback);
-        mDragHelper.setEdgeTrackingEnabled(ViewDragHelper.EDGE_ALL);
-
-        mGestureDetector = new GestureDetectorCompat(context, mGestureListener);
+        mDragHelper = ViewDragHelper.create(this, 1.0f, mDragHelperCallback)
+        mDragHelper!!.setEdgeTrackingEnabled(ViewDragHelper.EDGE_ALL)
+        mGestureDetector = GestureDetectorCompat(context, mGestureListener)
     }
 
-    private final GestureDetector.OnGestureListener mGestureListener = new GestureDetector.SimpleOnGestureListener() {
-        boolean hasDisallowed = false;
+    private val mGestureListener: GestureDetector.OnGestureListener =
+        object : SimpleOnGestureListener() {
+            var hasDisallowed = false
+            override fun onDown(e: MotionEvent): Boolean {
+                mIsScrolling = false
+                hasDisallowed = false
+                return true
+            }
 
-        @Override
-        public boolean onDown(MotionEvent e) {
-            mIsScrolling = false;
-            hasDisallowed = false;
-            return true;
-        }
+            override fun onFling(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                velocityX: Float,
+                velocityY: Float
+            ): Boolean {
+                mIsScrolling = true
+                return false
+            }
 
-        @Override
-        public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
-            mIsScrolling = true;
-            return false;
-        }
-
-        @Override
-        public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-            mIsScrolling = true;
-
-            if (getParent() != null) {
-                boolean shouldDisallow;
-
-                if (!hasDisallowed) {
-                    shouldDisallow = getDistToClosestEdge() >= mMinDistRequestDisallowParent;
-                    if (shouldDisallow) {
-                        hasDisallowed = true;
+            override fun onScroll(
+                e1: MotionEvent,
+                e2: MotionEvent,
+                distanceX: Float,
+                distanceY: Float
+            ): Boolean {
+                mIsScrolling = true
+                if (parent != null) {
+                    val shouldDisallow: Boolean
+                    if (!hasDisallowed) {
+                        shouldDisallow = distToClosestEdge >= mMinDistRequestDisallowParent
+                        if (shouldDisallow) {
+                            hasDisallowed = true
+                        }
+                    } else {
+                        shouldDisallow = true
                     }
-                } else {
-                    shouldDisallow = true;
+
+                    // disallow parent to intercept touch event so that the layout will work
+                    // properly on RecyclerView or view that handles scroll gesture.
+                    parent.requestDisallowInterceptTouchEvent(shouldDisallow)
                 }
-
-                // disallow parent to intercept touch event so that the layout will work
-                // properly on RecyclerView or view that handles scroll gesture.
-                getParent().requestDisallowInterceptTouchEvent(shouldDisallow);
+                return false
             }
-
-            return false;
         }
-    };
-
-    private int getDistToClosestEdge() {
-        switch (mDragEdge) {
-            case DRAG_EDGE_LEFT:
-                final int pivotRight = mRectMainClose.left + mSecondaryView.getWidth();
-
-                return Math.min(
-                        mMainView.getLeft() - mRectMainClose.left,
-                        pivotRight - mMainView.getLeft()
-                );
-
-            case DRAG_EDGE_RIGHT:
-                final int pivotLeft = mRectMainClose.right - mSecondaryView.getWidth();
-
-                return Math.min(
-                        mMainView.getRight() - pivotLeft,
-                        mRectMainClose.right - mMainView.getRight()
-                );
-
-            case DRAG_EDGE_TOP:
-                final int pivotBottom = mRectMainClose.top + mSecondaryView.getHeight();
-
-                return Math.min(
-                        mMainView.getBottom() - pivotBottom,
-                        pivotBottom - mMainView.getTop()
-                );
-
-            case DRAG_EDGE_BOTTOM:
-                final int pivotTop = mRectMainClose.bottom - mSecondaryView.getHeight();
-
-                return Math.min(
-                        mRectMainClose.bottom - mMainView.getBottom(),
-                        mMainView.getBottom() - pivotTop
-                );
+    private val distToClosestEdge: Int
+        get() {
+            when (dragEdge) {
+                DRAG_EDGE_LEFT -> {
+                    val pivotRight = mRectMainClose.left + mSecondaryView!!.width
+                    return Math.min(
+                        mMainView!!.left - mRectMainClose.left,
+                        pivotRight - mMainView!!.left
+                    )
+                }
+                DRAG_EDGE_RIGHT -> {
+                    val pivotLeft = mRectMainClose.right - mSecondaryView!!.width
+                    return Math.min(
+                        mMainView!!.right - pivotLeft,
+                        mRectMainClose.right - mMainView!!.right
+                    )
+                }
+                DRAG_EDGE_TOP -> {
+                    val pivotBottom = mRectMainClose.top + mSecondaryView!!.height
+                    return Math.min(
+                        mMainView!!.bottom - pivotBottom,
+                        pivotBottom - mMainView!!.top
+                    )
+                }
+                DRAG_EDGE_BOTTOM -> {
+                    val pivotTop = mRectMainClose.bottom - mSecondaryView!!.height
+                    return Math.min(
+                        mRectMainClose.bottom - mMainView!!.bottom,
+                        mMainView!!.bottom - pivotTop
+                    )
+                }
+            }
+            return 0
         }
 
-        return 0;
-    }
-
-    private int getHalfwayPivotHorizontal() {
-        if (mDragEdge == DRAG_EDGE_LEFT) {
-            return mRectMainClose.left + mSecondaryView.getWidth() / 2;
+    private val halfwayPivotHorizontal: Int
+        get() = if (dragEdge == DRAG_EDGE_LEFT) {
+            mRectMainClose.left + mSecondaryView!!.width / 2
         } else {
-            return mRectMainClose.right - mSecondaryView.getWidth() / 2;
+            mRectMainClose.right - mSecondaryView!!.width / 2
         }
-    }
 
-    private int getHalfwayPivotVertical() {
-        if (mDragEdge == DRAG_EDGE_TOP) {
-            return mRectMainClose.top + mSecondaryView.getHeight() / 2;
+    private val halfwayPivotVertical: Int
+        get() = if (dragEdge == DRAG_EDGE_TOP) {
+            mRectMainClose.top + mSecondaryView!!.height / 2
         } else {
-            return mRectMainClose.bottom - mSecondaryView.getHeight() / 2;
-        }
-    }
-
-    private final ViewDragHelper.Callback mDragHelperCallback = new ViewDragHelper.Callback() {
-        @Override
-        public boolean tryCaptureView(View child, int pointerId) {
-            mAborted = false;
-
-            if (mLockDrag)
-                return false;
-
-            mDragHelper.captureChildView(mMainView, pointerId);
-            return false;
+            mRectMainClose.bottom - mSecondaryView!!.height / 2
         }
 
-        @Override
-        public int clampViewPositionVertical(View child, int top, int dy) {
-            switch (mDragEdge) {
-                case DRAG_EDGE_TOP:
-                    return Math.max(
-                            Math.min(top, mRectMainClose.top + mSecondaryView.getHeight()),
-                            mRectMainClose.top
-                    );
+    private val mDragHelperCallback: ViewDragHelper.Callback = object : ViewDragHelper.Callback() {
+        override fun tryCaptureView(child: View, pointerId: Int): Boolean {
+            mAborted = false
+            if (isDragLocked) return false
+            mDragHelper!!.captureChildView(mMainView!!, pointerId)
+            return false
+        }
 
-                case DRAG_EDGE_BOTTOM:
-                    return Math.max(
-                            Math.min(top, mRectMainClose.top),
-                            mRectMainClose.top - mSecondaryView.getHeight()
-                    );
-
-                default:
-                    return child.getTop();
+        override fun clampViewPositionVertical(child: View, top: Int, dy: Int): Int {
+            return when (dragEdge) {
+                DRAG_EDGE_TOP -> Math.max(
+                    Math.min(top, mRectMainClose.top + mSecondaryView!!.height),
+                    mRectMainClose.top
+                )
+                DRAG_EDGE_BOTTOM -> Math.max(
+                    Math.min(top, mRectMainClose.top),
+                    mRectMainClose.top - mSecondaryView!!.height
+                )
+                else -> child.top
             }
         }
 
-        @Override
-        public int clampViewPositionHorizontal(View child, int left, int dx) {
-            switch (mDragEdge) {
-                case DRAG_EDGE_RIGHT:
-                    return Math.max(
-                            Math.min(left, mRectMainClose.left),
-                            mRectMainClose.left - mSecondaryView.getWidth()
-                    );
-
-                case DRAG_EDGE_LEFT:
-                    return Math.max(
-                            Math.min(left, mRectMainClose.left + mSecondaryView.getWidth()),
-                            mRectMainClose.left
-                    );
-
-                default:
-                    return child.getLeft();
+        override fun clampViewPositionHorizontal(child: View, left: Int, dx: Int): Int {
+            return when (dragEdge) {
+                DRAG_EDGE_RIGHT -> Math.max(
+                    Math.min(left, mRectMainClose.left),
+                    mRectMainClose.left - mSecondaryView!!.width
+                )
+                DRAG_EDGE_LEFT -> Math.max(
+                    Math.min(left, mRectMainClose.left + mSecondaryView!!.width),
+                    mRectMainClose.left
+                )
+                else -> child.left
             }
         }
 
-        @Override
-        public void onViewReleased(View releasedChild, float xvel, float yvel) {
-            final boolean velRightExceeded = pxToDp((int) xvel) >= mMinFlingVelocity;
-            final boolean velLeftExceeded = pxToDp((int) xvel) <= -mMinFlingVelocity;
-            final boolean velUpExceeded = pxToDp((int) yvel) <= -mMinFlingVelocity;
-            final boolean velDownExceeded = pxToDp((int) yvel) >= mMinFlingVelocity;
-
-            final int pivotHorizontal = getHalfwayPivotHorizontal();
-            final int pivotVertical = getHalfwayPivotVertical();
-
-            switch (mDragEdge) {
-                case DRAG_EDGE_RIGHT:
-                    if (velRightExceeded) {
-                        close(true);
-                    } else if (velLeftExceeded) {
-                        open(true);
+        override fun onViewReleased(releasedChild: View, xvel: Float, yvel: Float) {
+            val velRightExceeded: Boolean = pxToDp(xvel.toInt()) >= minFlingVelocity
+            val velLeftExceeded: Boolean = pxToDp(xvel.toInt()) <= -minFlingVelocity
+            val velUpExceeded: Boolean = pxToDp(yvel.toInt()) <= -minFlingVelocity
+            val velDownExceeded: Boolean = pxToDp(yvel.toInt()) >= minFlingVelocity
+            val pivotHorizontal = halfwayPivotHorizontal
+            val pivotVertical = halfwayPivotVertical
+            when (dragEdge) {
+                DRAG_EDGE_RIGHT -> if (velRightExceeded) {
+                    close(true)
+                } else if (velLeftExceeded) {
+                    open(true)
+                } else {
+                    if (mMainView!!.right < pivotHorizontal) {
+                        open(true)
                     } else {
-                        if (mMainView.getRight() < pivotHorizontal) {
-                            open(true);
-                        } else {
-                            close(true);
-                        }
+                        close(true)
                     }
-                    break;
-
-                case DRAG_EDGE_LEFT:
-                    if (velRightExceeded) {
-                        open(true);
-                    } else if (velLeftExceeded) {
-                        close(true);
+                }
+                DRAG_EDGE_LEFT -> if (velRightExceeded) {
+                    open(true)
+                } else if (velLeftExceeded) {
+                    close(true)
+                } else {
+                    if (mMainView!!.left < pivotHorizontal) {
+                        close(true)
                     } else {
-                        if (mMainView.getLeft() < pivotHorizontal) {
-                            close(true);
-                        } else {
-                            open(true);
-                        }
+                        open(true)
                     }
-                    break;
-
-                case DRAG_EDGE_TOP:
-                    if (velUpExceeded) {
-                        close(true);
-                    } else if (velDownExceeded) {
-                        open(true);
+                }
+                DRAG_EDGE_TOP -> if (velUpExceeded) {
+                    close(true)
+                } else if (velDownExceeded) {
+                    open(true)
+                } else {
+                    if (mMainView!!.top < pivotVertical) {
+                        close(true)
                     } else {
-                        if (mMainView.getTop() < pivotVertical) {
-                            close(true);
-                        } else {
-                            open(true);
-                        }
+                        open(true)
                     }
-                    break;
-
-                case DRAG_EDGE_BOTTOM:
-                    if (velUpExceeded) {
-                        open(true);
-                    } else if (velDownExceeded) {
-                        close(true);
+                }
+                DRAG_EDGE_BOTTOM -> if (velUpExceeded) {
+                    open(true)
+                } else if (velDownExceeded) {
+                    close(true)
+                } else {
+                    if (mMainView!!.bottom < pivotVertical) {
+                        open(true)
                     } else {
-                        if (mMainView.getBottom() < pivotVertical) {
-                            open(true);
-                        } else {
-                            close(true);
-                        }
+                        close(true)
                     }
-                    break;
+                }
             }
         }
 
-        @Override
-        public void onEdgeDragStarted(int edgeFlags, int pointerId) {
-            super.onEdgeDragStarted(edgeFlags, pointerId);
-
-            if (mLockDrag) {
-                return;
+        override fun onEdgeDragStarted(edgeFlags: Int, pointerId: Int) {
+            super.onEdgeDragStarted(edgeFlags, pointerId)
+            if (isDragLocked) {
+                return
             }
-
-            boolean edgeStartLeft = (mDragEdge == DRAG_EDGE_RIGHT)
-                    && edgeFlags == ViewDragHelper.EDGE_LEFT;
-
-            boolean edgeStartRight = (mDragEdge == DRAG_EDGE_LEFT)
-                    && edgeFlags == ViewDragHelper.EDGE_RIGHT;
-
-            boolean edgeStartTop = (mDragEdge == DRAG_EDGE_BOTTOM)
-                    && edgeFlags == ViewDragHelper.EDGE_TOP;
-
-            boolean edgeStartBottom = (mDragEdge == DRAG_EDGE_TOP)
-                    && edgeFlags == ViewDragHelper.EDGE_BOTTOM;
-
+            val edgeStartLeft = (dragEdge == DRAG_EDGE_RIGHT
+                    && edgeFlags == ViewDragHelper.EDGE_LEFT)
+            val edgeStartRight = (dragEdge == DRAG_EDGE_LEFT
+                    && edgeFlags == ViewDragHelper.EDGE_RIGHT)
+            val edgeStartTop = (dragEdge == DRAG_EDGE_BOTTOM
+                    && edgeFlags == ViewDragHelper.EDGE_TOP)
+            val edgeStartBottom = (dragEdge == DRAG_EDGE_TOP
+                    && edgeFlags == ViewDragHelper.EDGE_BOTTOM)
             if (edgeStartLeft || edgeStartRight || edgeStartTop || edgeStartBottom) {
-                mDragHelper.captureChildView(mMainView, pointerId);
+                mDragHelper!!.captureChildView(mMainView!!, pointerId)
             }
         }
 
-        @Override
-        public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
-            super.onViewPositionChanged(changedView, left, top, dx, dy);
+        override fun onViewPositionChanged(
+            changedView: View,
+            left: Int,
+            top: Int,
+            dx: Int,
+            dy: Int
+        ) {
+            super.onViewPositionChanged(changedView, left, top, dx, dy)
             if (mMode == MODE_SAME_LEVEL) {
-                if (mDragEdge == DRAG_EDGE_LEFT || mDragEdge == DRAG_EDGE_RIGHT) {
-                    mSecondaryView.offsetLeftAndRight(dx);
+                if (dragEdge == DRAG_EDGE_LEFT || dragEdge == DRAG_EDGE_RIGHT) {
+                    mSecondaryView!!.offsetLeftAndRight(dx)
                 } else {
-                    mSecondaryView.offsetTopAndBottom(dy);
+                    mSecondaryView!!.offsetTopAndBottom(dy)
                 }
             }
-
-            boolean isMoved = (mMainView.getLeft() != mLastMainLeft) || (mMainView.getTop() != mLastMainTop);
+            val isMoved = mMainView!!.left != mLastMainLeft || mMainView!!.top != mLastMainTop
             if (mSwipeListener != null && isMoved) {
-                if (mMainView.getLeft() == mRectMainClose.left && mMainView.getTop() == mRectMainClose.top) {
-                    mSwipeListener.onClosed(SwipeRevealLayout.this);
-                } else if (mMainView.getLeft() == mRectMainOpen.left && mMainView.getTop() == mRectMainOpen.top) {
-                    mSwipeListener.onOpened(SwipeRevealLayout.this);
+                if (mMainView!!.left == mRectMainClose.left && mMainView!!.top == mRectMainClose.top) {
+                    mSwipeListener!!.onClosed(this@SwipeRevealLayout)
+                } else if (mMainView!!.left == mRectMainOpen.left && mMainView!!.top == mRectMainOpen.top) {
+                    mSwipeListener!!.onOpened(this@SwipeRevealLayout)
                 } else {
-                    mSwipeListener.onSlide(SwipeRevealLayout.this, getSlideOffset());
+                    mSwipeListener!!.onSlide(this@SwipeRevealLayout, slideOffset)
                 }
             }
-
-            mLastMainLeft = mMainView.getLeft();
-            mLastMainTop = mMainView.getTop();
-            ViewCompat.postInvalidateOnAnimation(SwipeRevealLayout.this);
+            mLastMainLeft = mMainView!!.left
+            mLastMainTop = mMainView!!.top
+            ViewCompat.postInvalidateOnAnimation(this@SwipeRevealLayout)
         }
 
-        private float getSlideOffset() {
-            switch (mDragEdge) {
-                case DRAG_EDGE_LEFT:
-                    return (float) (mMainView.getLeft() - mRectMainClose.left) / mSecondaryView.getWidth();
-
-                case DRAG_EDGE_RIGHT:
-                    return (float) (mRectMainClose.left - mMainView.getLeft()) / mSecondaryView.getWidth();
-
-                case DRAG_EDGE_TOP:
-                    return (float) (mMainView.getTop() - mRectMainClose.top) / mSecondaryView.getHeight();
-
-                case DRAG_EDGE_BOTTOM:
-                    return (float) (mRectMainClose.top - mMainView.getTop()) / mSecondaryView.getHeight();
-
-                default:
-                    return 0;
+        private val slideOffset: Float
+            get() = when (dragEdge) {
+                DRAG_EDGE_LEFT -> (mMainView!!.left - mRectMainClose.left).toFloat() / mSecondaryView!!.width
+                DRAG_EDGE_RIGHT -> (mRectMainClose.left - mMainView!!.left).toFloat() / mSecondaryView!!.width
+                DRAG_EDGE_TOP -> (mMainView!!.top - mRectMainClose.top).toFloat() / mSecondaryView!!.height
+                DRAG_EDGE_BOTTOM -> (mRectMainClose.top - mMainView!!.top).toFloat() / mSecondaryView!!.height
+                else -> 0f
             }
-        }
 
-        @Override
-        public void onViewDragStateChanged(int state) {
-            super.onViewDragStateChanged(state);
-            final int prevState = mState;
-
-            switch (state) {
-                case ViewDragHelper.STATE_DRAGGING:
-                    mState = STATE_DRAGGING;
-                    break;
-
-                case ViewDragHelper.STATE_IDLE:
-
+        override fun onViewDragStateChanged(state: Int) {
+            super.onViewDragStateChanged(state)
+            val prevState = mState
+            when (state) {
+                ViewDragHelper.STATE_DRAGGING -> mState = STATE_DRAGGING
+                ViewDragHelper.STATE_IDLE ->
                     // drag edge is left or right
-                    if (mDragEdge == DRAG_EDGE_LEFT || mDragEdge == DRAG_EDGE_RIGHT) {
-                        if (mMainView.getLeft() == mRectMainClose.left) {
-                            mState = STATE_CLOSE;
+                    mState =
+                        if (dragEdge == DRAG_EDGE_LEFT || dragEdge == DRAG_EDGE_RIGHT) {
+                            if (mMainView!!.left == mRectMainClose.left) {
+                                STATE_CLOSE
+                            } else {
+                                STATE_OPEN
+                            }
                         } else {
-                            mState = STATE_OPEN;
+                            if (mMainView!!.top == mRectMainClose.top) {
+                                STATE_CLOSE
+                            } else {
+                                STATE_OPEN
+                            }
                         }
-                    }
-
-                    // drag edge is top or bottom
-                    else {
-                        if (mMainView.getTop() == mRectMainClose.top) {
-                            mState = STATE_CLOSE;
-                        } else {
-                            mState = STATE_OPEN;
-                        }
-                    }
-                    break;
             }
-
             if (mDragStateChangeListener != null && !mAborted && prevState != mState) {
-                mDragStateChangeListener.onDragStateChanged(mState);
+                mDragStateChangeListener!!.onDragStateChanged(mState)
             }
         }
-    };
+    }
 
-    public static String getStateString(int state) {
-        switch (state) {
-            case STATE_CLOSE:
-                return "state_close";
+    private fun pxToDp(px: Int): Int {
+        val resources = context.resources
+        val metrics = resources.displayMetrics
+        return (px / (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)).toInt()
+    }
 
-            case STATE_CLOSING:
-                return "state_closing";
+    private fun dpToPx(dp: Int): Int {
+        val resources = context.resources
+        val metrics = resources.displayMetrics
+        return (dp * (metrics.densityDpi.toFloat() / DisplayMetrics.DENSITY_DEFAULT)).toInt()
+    }
 
-            case STATE_OPEN:
-                return "state_open";
+    companion object {
+        // These states are used only for ViewBindHelper
+        const val STATE_CLOSE = 0
+        const val STATE_CLOSING = 1
+        const val STATE_OPEN = 2
+        const val STATE_OPENING = 3
+        const val STATE_DRAGGING = 4
+        private const val DEFAULT_MIN_FLING_VELOCITY = 300 // dp per second
+        private const val DEFAULT_MIN_DIST_REQUEST_DISALLOW_PARENT = 1 // dp
+        const val DRAG_EDGE_LEFT = 0x1
+        const val DRAG_EDGE_RIGHT = 0x1 shl 1
+        const val DRAG_EDGE_TOP = 0x1 shl 2
+        const val DRAG_EDGE_BOTTOM = 0x1 shl 3
 
-            case STATE_OPENING:
-                return "state_opening";
+        /**
+         * The secondary view will be under the main view.
+         */
+        const val MODE_NORMAL = 0
 
-            case STATE_DRAGGING:
-                return "state_dragging";
+        /**
+         * The secondary view will stick the edge of the main view.
+         */
+        const val MODE_SAME_LEVEL = 1
 
-            default:
-                return "undefined";
+        fun getStateString(state: Int): String {
+            return when (state) {
+                STATE_CLOSE -> "state_close"
+                STATE_CLOSING -> "state_closing"
+                STATE_OPEN -> "state_open"
+                STATE_OPENING -> "state_opening"
+                STATE_DRAGGING -> "state_dragging"
+                else -> "undefined"
+            }
         }
-    }
-
-    private int pxToDp(int px) {
-        Resources resources = getContext().getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        return (int) (px / ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
-    }
-
-    private int dpToPx(int dp) {
-        Resources resources = getContext().getResources();
-        DisplayMetrics metrics = resources.getDisplayMetrics();
-        return (int) (dp * ((float) metrics.densityDpi / DisplayMetrics.DENSITY_DEFAULT));
     }
 }
-

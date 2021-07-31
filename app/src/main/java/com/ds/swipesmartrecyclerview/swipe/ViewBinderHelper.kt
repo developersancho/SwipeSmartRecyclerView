@@ -27,12 +27,14 @@ class ViewBinderHelper {
         mapLayouts.values.remove(swipeLayout)
         mapLayouts[id] = swipeLayout
         swipeLayout.abort()
-        swipeLayout.setDragStateChangeListener { state ->
-            mapStates[id] = state
-            if (openOnlyOne) {
-                closeOthers(id, swipeLayout)
+        swipeLayout.setDragStateChangeListener(object : SwipeRevealLayout.DragStateChangeListener {
+            override fun onDragStateChanged(state: Int) {
+                mapStates[id] = state
+                if (openOnlyOne) {
+                    closeOthers(id, swipeLayout)
+                }
             }
-        }
+        })
 
         // first time binding.
         if (!mapStates.containsKey(id)) {
